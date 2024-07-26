@@ -5,7 +5,7 @@ import axios from "axios";
 import useLocalStorageState from "./helpers/customHook";
 
 function App() {
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useLocalStorageState("questions", []);
   const [answers, setAnswers] = useLocalStorageState("anwers", {});
   const [submitAnswer, setSubmitAnswer] = useState(false);
   const [score, setScore] = useState(0);
@@ -14,28 +14,31 @@ function App() {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await axios.get(
-          "https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple"
-        );
-        const data = response.data.results;
-
-        const questionsData = data.map((element, index) => {
-          const questionModel = {
-            id: index,
-            question: element.question,
-            answers: [element.correct_answer, ...element.incorrect_answers],
-            correct_answer: element.correct_answer,
-          };
-
-          // Shuffle the answers array
-          questionModel.answers = questionModel.answers.sort(
-            () => Math.random() - 0.5
+        let existingAnswers = localStorage.getItem("answers");
+        let existingQuestions = localStorage.getItem("questions");
+        if (existingQuestions === null && existingAnswers === null) {
+          const response = await axios.get(
+            "https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple"
           );
+          const data = response.data.results;
+          const questionsData = data.map((element, index) => {
+            const questionModel = {
+              id: index,
+              question: element.question,
+              answers: [element.correct_answer, ...element.incorrect_answers],
+              correct_answer: element.correct_answer,
+            };
 
-          return questionModel;
-        });
+            // Shuffle the answers array
+            questionModel.answers = questionModel.answers.sort(
+              () => Math.random() - 0.5
+            );
 
-        setQuestions(questionsData);
+            return questionModel;
+          });
+
+          setQuestions(questionsData);
+        }
       } catch (error) {
         console.error("Error fetching questions:", error);
       }
