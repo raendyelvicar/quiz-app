@@ -1,44 +1,47 @@
-import { Center, ChakraProvider, Container, Flex } from "@chakra-ui/react";
+import { ChakraProvider, Container, Button, Text } from "@chakra-ui/react";
 import QuizCard from "./components/QuizCard";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import getQuestions from "./api";
-import data from "./data";
+import useLocalStorageState from "./helpers/customHook";
 
 function App() {
   const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useLocalStorageState("anwers", {});
+  const [submitAnswer, setSubmitAnswer] = useState(false);
+  const [score, setScore] = useState(0);
 
   // Fetch data from API
   useEffect(() => {
-    const temp = [];
-    axios
-      .get(
-        "https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple"
-      )
-      .then((item) => {
-        const data = item.data.results;
-        data.map((element, index) => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await axios.get(
+          "https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple"
+        );
+        const data = response.data.results;
+
+        const questionsData = data.map((element, index) => {
           const questionModel = {
-            id: 0,
-            question: "",
-            answers: [],
-            correct_answer: "",
+            id: index,
+            question: element.question,
+            answers: [element.correct_answer, ...element.incorrect_answers],
+            correct_answer: element.correct_answer,
           };
 
-          questionModel.id = index;
-          questionModel.question = element.question;
-          questionModel.answers.push(element.correct_answer);
-          element.incorrect_answers.map((i) => {
-            questionModel.answers.push(i);
-          });
-          questionModel.correct_answer = element.correct_answer;
+          // Shuffle the answers array
+          questionModel.answers = questionModel.answers.sort(
+            () => Math.random() - 0.5
+          );
 
-          temp.push(questionModel);
+          return questionModel;
         });
 
-        setQuestions(temp);
-      });
+        setQuestions(questionsData);
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+      }
+    };
+
+    fetchQuestions();
   }, []);
 
   // Function to handle answer change
@@ -49,23 +52,42 @@ function App() {
     }));
   };
 
+  const handleSubmitAnswer = () => {
+    setSubmitAnswer(!submitAnswer);
+  };
+
+  const calculateScore = () => {
+    let newScore = 0;
+    questions.forEach((question) => {
+      if (answers[question.id] === question.correct_answer) {
+        newScore += 1;
+      }
+    });
+    setScore(newScore);
+  };
+
+  useEffect(() => {
+    calculateScore();
+  }, [submitAnswer]);
+
   return (
     <ChakraProvider>
-      <Container minW={"3xl"} height={"100vh"}>
-        {questions.map((question, index) => {
-          return (
-            <QuizCard
-              key={index}
-              question={question}
-              selectedAnswer={answers[question.id]}
-              onAnswerChange={handleAnswerChange}></QuizCard>
-          );
-        })}
-
-        <Flex>
-          <Center></Center>
-        </Flex>
-      </Container>
+      {!submitAnswer ? (
+        <Container minW={"3xl"} height={"100vh"} p={(10, 10)}>
+          {questions.map((question, index) => {
+            return (
+              <QuizCard
+                key={index}
+                question={question}
+                selectedAnswer={answers[question.id]}
+                onAnswerChange={handleAnswerChange}></QuizCard>
+            );
+          })}
+          <Button onClick={handleSubmitAnswer}>Submit</Button>
+        </Container>
+      ) : (
+        <div>Your score : {score}</div>
+      )}
     </ChakraProvider>
   );
 }

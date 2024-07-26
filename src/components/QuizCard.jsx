@@ -13,6 +13,7 @@ import {
   RadioGroup,
   Radio,
   Stack,
+  CardFooter,
 } from "@chakra-ui/react";
 import { useState } from "react";
 
@@ -21,7 +22,7 @@ function QuizCard(props) {
 
   return (
     <>
-      <Card>
+      <Card marginBottom={"20px"}>
         <CardHeader fontSize={"small"}>Question {question.id + 1}</CardHeader>
         <CardBody>
           <Stack spacing={8}>
@@ -47,11 +48,11 @@ function QuizCard(props) {
               </Stack>
             </RadioGroup>
           </Stack>
-          <Flex>
+          {/* <Flex>
             <Box p='2'></Box>
             <Spacer />
             <Button>Next</Button>
-          </Flex>
+          </Flex> */}
         </CardBody>
       </Card>
     </>
