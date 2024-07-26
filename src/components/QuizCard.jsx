@@ -4,18 +4,11 @@ import {
   CardHeader,
   CardBody,
   Text,
-  Button,
-  VStack,
-  Box,
   StackDivider,
-  Flex,
-  Spacer,
   RadioGroup,
   Radio,
   Stack,
-  CardFooter,
 } from "@chakra-ui/react";
-import { useState } from "react";
 
 function QuizCard(props) {
   const { question, selectedAnswer, onAnswerChange } = props;

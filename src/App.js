@@ -1,14 +1,24 @@
-import { ChakraProvider, Container, Button, Text } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  Container,
+  Button,
+  Text,
+  Box,
+  Flex,
+  Spacer,
+} from "@chakra-ui/react";
 import QuizCard from "./components/QuizCard";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import useLocalStorageState from "./helpers/customHook";
+import { fetchQuestionsData } from "./services/api";
 
 function App() {
   const [questions, setQuestions] = useLocalStorageState("questions", []);
   const [answers, setAnswers] = useLocalStorageState("anwers", {});
   const [submitAnswer, setSubmitAnswer] = useState(false);
   const [score, setScore] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   // Fetch data from API
   useEffect(() => {
@@ -17,26 +27,7 @@ function App() {
         let existingAnswers = localStorage.getItem("answers");
         let existingQuestions = localStorage.getItem("questions");
         if (existingQuestions === null && existingAnswers === null) {
-          const response = await axios.get(
-            "https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple"
-          );
-          const data = response.data.results;
-          const questionsData = data.map((element, index) => {
-            const questionModel = {
-              id: index,
-              question: element.question,
-              answers: [element.correct_answer, ...element.incorrect_answers],
-              correct_answer: element.correct_answer,
-            };
-
-            // Shuffle the answers array
-            questionModel.answers = questionModel.answers.sort(
-              () => Math.random() - 0.5
-            );
-
-            return questionModel;
-          });
-
+          const questionsData = await fetchQuestionsData();
           setQuestions(questionsData);
         }
       } catch (error) {
@@ -59,6 +50,20 @@ function App() {
     setSubmitAnswer(!submitAnswer);
   };
 
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex !== 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      handleSubmitAnswer();
+    }
+  };
+
   const calculateScore = () => {
     let newScore = 0;
     questions.forEach((question) => {
@@ -76,20 +81,35 @@ function App() {
   return (
     <ChakraProvider>
       {!submitAnswer ? (
-        <Container minW={"3xl"} height={"100vh"} p={(10, 10)}>
-          {questions.map((question, index) => {
-            return (
+        <Container minW={"3xl"} height={"100vh"} p={10}>
+          {questions.length > 0 && (
+            <>
               <QuizCard
-                key={index}
-                question={question}
-                selectedAnswer={answers[question.id]}
-                onAnswerChange={handleAnswerChange}></QuizCard>
-            );
-          })}
-          <Button onClick={handleSubmitAnswer}>Submit</Button>
+                question={questions[currentQuestionIndex]}
+                selectedAnswer={answers[questions[currentQuestionIndex].id]}
+                onAnswerChange={handleAnswerChange}
+              />
+              <Flex>
+                {currentQuestionIndex !== 0 &&
+                currentQuestionIndex < questions.length ? (
+                  <Button onClick={handlePreviousQuestion}>
+                    Previous Question
+                  </Button>
+                ) : null}
+                <Spacer />
+                <Button onClick={handleNextQuestion}>
+                  {currentQuestionIndex < questions.length - 1
+                    ? "Next Question"
+                    : "Submit"}
+                </Button>
+              </Flex>
+            </>
+          )}
         </Container>
       ) : (
-        <div>Your score : {score}</div>
+        <Box textAlign='center' mt={20}>
+          <Text fontSize='2xl'>Your score: {score}</Text>
+        </Box>
       )}
     </ChakraProvider>
   );
