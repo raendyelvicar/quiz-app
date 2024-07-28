@@ -10,7 +10,6 @@ import {
 } from "@chakra-ui/react";
 import QuizCard from "./components/QuizCard";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import useLocalStorageState from "./hooks/useLocalStorageState";
 import { fetchQuestionsData } from "./services/api";
 
@@ -18,7 +17,6 @@ function App() {
   const [questions, setQuestions] = useLocalStorageState("questions", []);
   const [answers, setAnswers] = useLocalStorageState("answers", {});
   const [submitAnswer, setSubmitAnswer] = useState(false);
-  const [retakeQuiz, setRetakeQuiz] = useState(false);
   const [startQuiz, setStartQuiz] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [score, setScore] = useState(0);
@@ -53,21 +51,19 @@ function App() {
       setIsLoading(true);
       let existingAnswers = JSON.parse(localStorage.getItem("answers"));
       let existingQuestions = JSON.parse(localStorage.getItem("questions"));
-      if (existingQuestions.length == 0) {
+      if (!existingQuestions || existingQuestions.length === 0) {
         const questionsData = await fetchQuestionsData();
-        if (questionsData.length > 0) {
-          setIsLoading(false);
-          setQuestions(questionsData);
-          setAnswers({});
-        }
+        setQuestions(questionsData);
+        setAnswers({});
       } else {
         // Parse the existing questions and answers if they are not null
-        setIsLoading(false);
         setQuestions(existingQuestions ? existingQuestions : []);
         setAnswers(existingAnswers ? existingAnswers : {});
       }
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching questions:", error);
+      setIsLoading(false);
     }
   };
   // Function to handle answer change
