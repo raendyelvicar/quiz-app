@@ -15,7 +15,7 @@ function QuizCard(props) {
 
   return (
     <>
-      <Card marginBottom={"20px"}>
+      <Card marginBottom={"20px"} minHeight={"400px"}>
         <CardHeader fontSize={"small"}>Question {question.id + 1}</CardHeader>
         <CardBody>
           <Stack spacing={8}>
